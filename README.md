@@ -35,7 +35,7 @@ pi install git:github.com/patrick-lindemann/pi-usage-footer
 Pin a release tag instead of tracking the default branch:
 
 ```bash
-pi install git:github.com/patrick-lindemann/pi-usage-footer@v1.0.0
+pi install git:github.com/patrick-lindemann/pi-usage-footer@v0.1.0
 ```
 
 ## Usage
