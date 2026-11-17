@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The `anthropic` provider as a second Claude source: usage for Claude Pro/Max
+  plans signed in through pi's `/login`, next to the existing `claude-code`
+  credentials path.
+
 ## [1.0.0] - 2026-11-18
 
 ### Added

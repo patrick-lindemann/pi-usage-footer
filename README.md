@@ -10,6 +10,7 @@ windows of coding-plan subscriptions, with reset countdowns and warning colors.
 | --- | --- | --- | --- |
 | OpenAI Codex | `openai-codex`, `openai-codex-<n>` | 5-hour, weekly | `chatgpt.com/backend-api/wham/usage` |
 | Claude Code | `claude-code` | 5-hour, weekly | `api.anthropic.com/api/oauth/usage` |
+| Anthropic (pi OAuth) | `anthropic` | 5-hour, weekly | `api.anthropic.com/api/oauth/usage` |
 | OpenCode Go | `opencode`, `opencode-go` | rolling 5-hour, weekly, monthly | `opencode.ai/zen/go/v1/usage` |
 | GLM Coding Plan | `zai*`, `glm*` | 5-hour, weekly, monthly (MCP) | `api.z.ai` / `open.bigmodel.cn` `api/monitor/usage/quota/limit` |
 | Kimi Code | `kimi*` | 5-hour, weekly, monthly | `api.kimi.com/coding/v1/usages` |
@@ -17,8 +18,9 @@ windows of coding-plan subscriptions, with reset countdowns and warning colors.
 
 Credentials are read through pi's model registry (`getApiKeyAndHeaders`), so the
 extension works with whatever auth the provider already has configured — API keys
-as well as headers-only OAuth bearer tokens. Claude Code usage is read from the
-credentials your Claude Code login stored (macOS Keychain or
+as well as headers-only OAuth bearer tokens. The `anthropic` provider uses the
+Claude Pro/Max OAuth login from pi's `/login`; the `claude-code` provider reads
+the credentials your Claude Code login stored (macOS Keychain or
 `~/.claude/.credentials.json`).
 
 A failed or unparseable fetch keeps the last good snapshot, so a transient
@@ -84,9 +86,9 @@ list hides the usage. Default: `["fiveHour"]`.
 
 ### `windowOverrides`
 
-Per-provider window lists keyed by `openai-codex`, `claude-code`, `opencode`,
-`zai`, `kimi` or `copilot`, used instead of the global `windows` for that
-provider. Default: none.
+Per-provider window lists keyed by `openai-codex`, `claude-code`, `anthropic`,
+`opencode`, `zai`, `kimi` or `copilot`, used instead of the global `windows` for
+that provider. Default: none.
 
 ### `format`
 

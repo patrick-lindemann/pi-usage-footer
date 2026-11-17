@@ -415,15 +415,28 @@ async function claudeToken(): Promise<string | undefined> {
   }
 }
 
-async function refreshClaude(): Promise<Snapshot | undefined> {
-  const token = await claudeToken();
-  if (!token) return undefined;
+async function fetchClaudeUsage(token: string): Promise<Snapshot | undefined> {
   const response = await fetch(CLAUDE_USAGE_URL, {
     // The endpoint answers 429 unless the request identifies as Claude Code.
     headers: { Authorization: `Bearer ${token}`, "anthropic-beta": "oauth-2025-04-20", "User-Agent": "claude-code/2.1.0" },
     signal: AbortSignal.timeout(15_000),
   });
   return response.ok ? parseClaudeUsage(await response.json()) : undefined;
+}
+
+async function refreshClaude(): Promise<Snapshot | undefined> {
+  const token = await claudeToken();
+  if (!token) return undefined;
+  return fetchClaudeUsage(token);
+}
+
+async function refreshAnthropic(ctx: ExtensionContext): Promise<Snapshot | undefined> {
+  if (!ctx.model) return undefined;
+  const auth = await ctx.modelRegistry.getApiKeyAndHeaders(ctx.model);
+  if (!auth.ok) return undefined;
+  const token = bearerToken(auth);
+  if (!token) return undefined;
+  return fetchClaudeUsage(token);
 }
 
 async function refreshOpenCode(ctx: ExtensionContext): Promise<Snapshot | undefined> {
@@ -504,6 +517,12 @@ const providers: UsageProvider[] = [
     name: "Claude",
     matches: (provider) => provider === "claude-code",
     refresh: refreshClaude,
+  },
+  {
+    id: "anthropic",
+    name: "Claude",
+    matches: (provider) => provider === "anthropic",
+    refresh: refreshAnthropic,
   },
   {
     id: "opencode",
