@@ -29,10 +29,10 @@ endpoint error or an undocumented API change never blanks the footer.
 ## Install
 
 ```bash
-pi install git:github.com/patrick-lindemann/pi-usage-footer
+pi install npm:@patrick-lindemann/pi-usage-footer
 ```
 
-Pin a release tag instead of tracking the default branch:
+To install a specific release from GitHub:
 
 ```bash
 pi install git:github.com/patrick-lindemann/pi-usage-footer@v0.1.0
@@ -40,14 +40,16 @@ pi install git:github.com/patrick-lindemann/pi-usage-footer@v0.1.0
 
 ## Usage
 
-The usage appears on the right side of the footer, next to the model name. The
-`/usage-footer` command forces a refresh and shows every window the active
+Usage appears after the model and thinking level. Status text from extensions
+such as `pi-token-speed` appears after usage, or on a separate line if it does
+not fit. Extensions that replace the entire footer cannot share this layout.
+
+The `/usage-footer` command forces a refresh and shows every window the active
 provider reports, including ones not selected for the footer.
 
 ## Configuration
 
-`~/.pi/agent/usage-footer.json` (created and migrated automatically; the legacy
-`chatgpt-limit.json` is read once and rewritten to the new location):
+Create `~/.pi/agent/usage-footer.json` to override the defaults:
 
 ```json
 {
@@ -57,22 +59,8 @@ provider reports, including ones not selected for the footer.
     "copilot": ["monthly"]
   },
   "format": "{percent}%/{label} ↺{reset}",
-  "footerPosition": "second",
-  "standardFooter": {
-    "workingDirectory": false,
-    "gitBranch": false,
-    "sessionName": true,
-    "inputTokens": true,
-    "outputTokens": true,
-    "totalTokens": false,
-    "cacheReadTokens": true,
-    "cacheWriteTokens": true,
-    "cost": false,
-    "subscriptionMarker": false,
-    "contextUsage": true,
-    "provider": false,
-    "model": true,
-    "thinkingLevel": true
+  "endpoints": {
+    "my-provider": "https://quota.example.com/usage"
   }
 }
 ```
@@ -86,9 +74,9 @@ list hides the usage. Default: `["fiveHour"]`.
 
 ### `windowOverrides`
 
-Per-provider window lists keyed by `openai-codex`, `claude-code`, `anthropic`,
-`opencode`, `zai`, `kimi` or `copilot`, used instead of the global `windows` for
-that provider. Default: none.
+Per-provider window lists used instead of the global `windows`. Use the IDs in
+[`src/config/defaults.ts`](src/config/defaults.ts), an ID with its own endpoint
+override, or a custom provider ID. Default: none.
 
 ### `format`
 
@@ -106,8 +94,33 @@ before it (like `↺`) is removed. Default: `"{percent}%/{label} ↺{reset}"`.
 
 Colors are automatic: dim below 80% used, warning from 80%, error from 90%.
 
-Older configurations using `quotaWindow` (`fiveHour` / `weekly` / `both` /
-`hidden`) and `displayMode` are migrated to `windows` and `format` on first load.
+### `endpoints`
+
+Set a provider ID to one HTTPS URL or an ordered list of fallback URLs. Exact
+IDs take precedence over family IDs. Built-in providers keep their existing
+response format and authentication. Missing or invalid URL entries use the
+[bundled defaults](src/config/defaults.ts), when available.
+
+To add a provider, use its exact Pi provider ID and point it at an endpoint that
+returns quota windows in this format:
+
+```json
+{"fiveHour": {"usedPercent": 42, "resetAt": 1900000000000}}
+```
+
+Use `fiveHour`, `weekly`, or `monthly`. `usedPercent` must be between 0 and 100.
+`resetAt` is optional and uses Unix milliseconds. If the provider returns a
+different JSON format, use an adapter endpoint that converts it to this format.
+
+Pi must already have credentials for the model. The extension sends the
+provider credential as a bearer token, so configure only URLs you trust.
+Requests do not follow redirects. Run `/reload` after changing the config.
+
+## Releases
+
+Raise the version in `package.json` and update `package-lock.json` before merging a release PR into `main`. GitHub Actions checks the code and tests, publishes to npm, then creates the matching GitHub release and tag. It skips versions that already have a GitHub release.
+
+For the first publish, set the GitHub Actions secret `NPM_TOKEN` to a granular npm token with publish access and 2FA bypass. Once the package exists, configure an npm trusted publisher for `patrick-lindemann/pi-usage-footer` and `release.yml`, allow `npm publish`, and remove the secret.
 
 ## Caveats
 

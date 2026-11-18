@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Footer status text from other extensions appears after subscription usage when space permits.
+- Override quota endpoints per provider or add a provider through a normalized JSON endpoint.
+- Publish releases to npm as `@patrick-lindemann/pi-usage-footer`.
+
+### Removed
+
+- Unused `footerPosition` and `standardFooter` options, and migration of `chatgpt-limit.json`, `quotaWindow` and `displayMode`.
+
 ## [0.1.0] - 2026-11-18
 
 ### Added
