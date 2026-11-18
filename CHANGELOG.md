@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Override quota windows, templates, colors, and endpoints under `providers`, or add a provider through a normalized JSON endpoint.
 - Customize quota colors and thresholds, or turn quota coloring off.
 - Set the quota polling interval or disable periodic polling.
+- Choose whether other extensions’ status text appears inline or on a separate row.
 - Publish releases to npm as `@patrick-lindemann/pi-usage-footer`.
 
 ### Removed

@@ -55,7 +55,7 @@ export function registerExtension(pi: ExtensionAPI): void {
             provider && id
               ? formatQuota(snapshots.get(provider.cacheKey), resolveDisplay(config, id, provider.id), theme)
               : undefined;
-          return renderFooter(ctx, footerData, theme, width, pi.getThinkingLevel(), quota);
+          return renderFooter(ctx, footerData, theme, width, pi.getThinkingLevel(), config.statusPlacement, quota);
         },
       };
     });

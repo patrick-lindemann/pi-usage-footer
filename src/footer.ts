@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import type { ExtensionContext, ReadonlyFooterDataProvider, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
 import { parseColor, rgbColor, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import namedColors from "color-name";
-import type { QuotaDisplay } from "./config/config.ts";
+import type { QuotaDisplay, StatusPlacement } from "./config/config.ts";
 import { type Snapshot, type UsageWindow, type WindowKind, windowKinds } from "./usage.ts";
 
 const labels: Record<WindowKind, string> = { fiveHour: "5h", weekly: "W", monthly: "M" };
@@ -72,8 +72,9 @@ export function formatQuotaSummary(name: string, snapshot: Snapshot): string {
  * @param theme Pi's color formatter.
  * @param width Number of terminal columns.
  * @param thinkingLevel Active thinking level.
+ * @param statusPlacement Whether to keep statuses inline, use a separate row, or choose based on width.
  * @param quota Formatted quota text, if available.
- * @returns Footer lines with a separate status row when statuses do not fit beside the model.
+ * @returns Footer lines with statuses placed according to the selected mode.
  */
 export function renderFooter(
   ctx: FooterContext,
@@ -81,6 +82,7 @@ export function renderFooter(
   theme: FooterTheme,
   width: number,
   thinkingLevel: string,
+  statusPlacement: StatusPlacement,
   quota?: string,
 ): string[] {
   const stats = _formatSessionStats(ctx, theme);
@@ -96,8 +98,10 @@ export function renderFooter(
     .filter(Boolean)
     .join(separator);
   const rightWithStatuses = statuses ? `${modelAndQuota}${separator}${statuses}` : modelAndQuota;
-  const fitsInline = visibleWidth(stats) + 2 + visibleWidth(rightWithStatuses) <= width;
-  const right = truncateToWidth(fitsInline ? rightWithStatuses : modelAndQuota, width, "");
+  const showInline =
+    statusPlacement === "inline" ||
+    (statusPlacement === "auto" && visibleWidth(stats) + 2 + visibleWidth(rightWithStatuses) <= width);
+  const right = truncateToWidth(showInline ? rightWithStatuses : modelAndQuota, width, "");
   const clippedStats = truncateToWidth(stats, Math.max(0, width - visibleWidth(right) - 2), "...");
   const padding = " ".repeat(Math.max(0, width - visibleWidth(clippedStats) - visibleWidth(right)));
   const branch = footerData.getGitBranch();
@@ -106,7 +110,7 @@ export function renderFooter(
     truncateToWidth(theme.fg("dim", location), width, theme.fg("dim", "...")),
     truncateToWidth(theme.fg("dim", clippedStats) + padding + right, width, ""),
   ];
-  if (statuses && !fitsInline) {
+  if (statuses && !showInline) {
     lines.push(truncateToWidth(statuses, width, "..."));
   }
   return lines;

@@ -85,7 +85,14 @@ test("renders live status entries without changing quota placement or migrating 
   handlers.get("session_shutdown")();
   assert.equal(cancel.mock.calls[0].arguments[0], schedule.mock.calls[0].result);
 
-  await writeFile(configPath, JSON.stringify({ refreshIntervalSeconds: 0 }));
+  await writeFile(configPath, JSON.stringify({ refreshIntervalSeconds: 0, statusPlacement: "separate" }));
   await handlers.get("session_start")({}, ctx);
   assert.equal(schedule.mock.callCount(), 1);
+
+  statuses.set("token-speed", speed);
+  statuses.set("clock", "Ready\nnow");
+  const separated = footer.render(120);
+  assert.equal(separated.length, 3);
+  assert.equal(separated[2], `Ready now • ${speed}`);
+  assert.match(separated[1], /example-model • high • 42%\/5h$/);
 });

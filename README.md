@@ -73,6 +73,13 @@ Seconds between periodic quota refreshes. The default is `60`. Set it to `0`
 to stop polling. Startup, model changes, completed runs, and `/usage-footer`
 still refresh usage.
 
+### `statusPlacement`
+
+Controls where other extensions’ status text appears. `"auto"` (default) puts it
+beside the model when it fits and on a separate row otherwise. `"inline"` keeps
+it on the model row and clips overflow. `"separate"` always uses a separate row
+when status text is present.
+
 ### `windows`
 
 Which windows to display, in this order: `"fiveHour"`, `"weekly"`, `"monthly"`.

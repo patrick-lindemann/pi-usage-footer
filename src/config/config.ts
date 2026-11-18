@@ -15,8 +15,11 @@ const defaultDisplay = {
 
 export interface FooterConfig extends QuotaDisplay {
   refreshIntervalSeconds: number;
+  statusPlacement: StatusPlacement;
   providers: ReadonlyMap<string, ProviderSettings>;
 }
+
+export type StatusPlacement = "auto" | "inline" | "separate";
 
 export interface QuotaDisplay {
   windows: readonly WindowKind[];
@@ -159,5 +162,7 @@ function _parseConfig(value: unknown): FooterConfig {
     interval !== undefined && Number.isInteger(interval) && interval >= 0 && interval * 1000 <= 2 ** 31 - 1
       ? interval
       : 60;
-  return { ..._mergeDisplay(defaultDisplay, _readDisplay(source)), refreshIntervalSeconds, providers };
+  const placement = source?.statusPlacement;
+  const statusPlacement = placement === "inline" || placement === "separate" ? placement : "auto";
+  return { ..._mergeDisplay(defaultDisplay, _readDisplay(source)), refreshIntervalSeconds, statusPlacement, providers };
 }
