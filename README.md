@@ -141,7 +141,7 @@ Requests do not follow redirects. Run `/reload` after changing the config.
 
 Raise the version in `package.json` and update `package-lock.json` before merging a release PR into `main`. GitHub Actions checks the code and tests, publishes to npm, then creates the matching GitHub release and tag. It skips versions that already have a GitHub release.
 
-For the first publish, set the GitHub Actions secret `NPM_TOKEN` to a granular npm token with publish access and 2FA bypass. Once the package exists, configure an npm trusted publisher for `patrick-lindemann/pi-usage-footer` and `release.yml`, allow `npm publish`, and remove the secret.
+Publishing uses npm trusted publishing: on the package settings on npmjs.com, add the GitHub Actions trusted publisher for this repository and the workflow filename `release.yml`, and allow `npm publish`. Publish the first version manually with `npm publish`, because npm cannot configure a trusted publisher for a package that does not exist yet. After that, no npm token is needed; consider disallowing token publishing in the package settings.
 
 ## Caveats
 
