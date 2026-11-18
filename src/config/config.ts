@@ -14,6 +14,7 @@ const defaultDisplay = {
 } satisfies QuotaDisplay;
 
 export interface FooterConfig extends QuotaDisplay {
+  refreshIntervalSeconds: number;
   providers: ReadonlyMap<string, ProviderSettings>;
 }
 
@@ -153,5 +154,10 @@ function _parseConfig(value: unknown): FooterConfig {
     const urls = (Array.isArray(raw) ? raw : [raw]).map(_readEndpoint).filter((url) => url !== undefined);
     providers.set(id, { ..._readDisplay(provider), endpoints: urls.length ? urls : undefined });
   }
-  return { ..._mergeDisplay(defaultDisplay, _readDisplay(source)), providers };
+  const interval = readNumber(source?.refreshIntervalSeconds);
+  const refreshIntervalSeconds =
+    interval !== undefined && Number.isInteger(interval) && interval >= 0 && interval * 1000 <= 2 ** 31 - 1
+      ? interval
+      : 60;
+  return { ..._mergeDisplay(defaultDisplay, _readDisplay(source)), refreshIntervalSeconds, providers };
 }

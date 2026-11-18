@@ -18,7 +18,9 @@ test("renders live status entries without changing quota placement or migrating 
     await rm(dir, { recursive: true });
   });
   const configPath = join(dir, "usage-footer.json");
-  const config = JSON.stringify({ quotaWindow: "hidden", displayMode: "used" });
+  const config = JSON.stringify({ quotaWindow: "hidden", displayMode: "used", refreshIntervalSeconds: 45 });
+  const schedule = t.mock.method(globalThis, "setInterval", () => ({ unref() {} }));
+  const cancel = t.mock.method(globalThis, "clearInterval", () => {});
   await writeFile(configPath, config);
 
   t.mock.method(globalThis, "fetch", async () =>
@@ -79,4 +81,11 @@ test("renders live status entries without changing quota placement or migrating 
 
   statuses.clear();
   assert.deepEqual(footer.render(120), baseline);
+  assert.equal(schedule.mock.calls[0].arguments[1], 45_000);
+  handlers.get("session_shutdown")();
+  assert.equal(cancel.mock.calls[0].arguments[0], schedule.mock.calls[0].result);
+
+  await writeFile(configPath, JSON.stringify({ refreshIntervalSeconds: 0 }));
+  await handlers.get("session_start")({}, ctx);
+  assert.equal(schedule.mock.callCount(), 1);
 });

@@ -4,8 +4,6 @@ import { formatQuota, formatQuotaSummary, renderFooter } from "./footer.ts";
 import { fetchUsage, resolveProvider } from "./providers/providers.ts";
 import type { Snapshot } from "./usage.ts";
 
-const refreshIntervalMs = 60_000;
-
 /**
  * Registers the quota footer and refresh command with Pi.
  * @param pi Pi's API for session hooks, footer access and commands.
@@ -67,8 +65,10 @@ export function registerExtension(pi: ExtensionAPI): void {
     config = await loadConfig();
     _installFooter(ctx);
     await _refresh(ctx);
-    timer = setInterval(() => void _refresh(ctx), refreshIntervalMs);
-    timer.unref();
+    if (config.refreshIntervalSeconds > 0) {
+      timer = setInterval(() => void _refresh(ctx), config.refreshIntervalSeconds * 1000);
+      timer.unref();
+    }
   });
   pi.on("model_select", async (_event, ctx) => {
     _installFooter(ctx);

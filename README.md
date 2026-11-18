@@ -56,8 +56,8 @@ Create `~/.pi/agent/usage-footer.json` to override the defaults:
   "format": "{percent}%/{label} ↺{reset}",
   "quotaColors": {
     "normal": "lightgray",
-    "warning": { "at": 80, "color": "warning" },
-    "critical": { "at": 90, "color": "#ff5555" }
+    "warning": { "at": 75, "color": "warning" },
+    "critical": { "at": 95, "color": "#ff5555" }
   },
   "providers": {
     "opencode": { "windows": ["fiveHour", "weekly", "monthly"] },
@@ -66,6 +66,12 @@ Create `~/.pi/agent/usage-footer.json` to override the defaults:
   }
 }
 ```
+
+### `refreshIntervalSeconds`
+
+Seconds between periodic quota refreshes. The default is `60`. Set it to `0`
+to stop polling. Startup, model changes, completed runs, and `/usage-footer`
+still refresh usage.
 
 ### `windows`
 
@@ -93,7 +99,8 @@ before it (like `↺`) is removed. Default: `"{percent}%/{label} ↺{reset}"`.
 By default, quota text uses `dim` below 80% used, `warning` from 80%, and
 `error` from 90%. Set `quotaColors` to `false` for plain quota text. Use Pi theme
 names, CSS color names such as `lightgray`, or hex values such as `#ff5555`.
-Thresholds use the rounded used percentage, and `critical` takes priority.
+Set `warning.at` and `critical.at` to change the thresholds. They use the
+rounded used percentage, and `critical` takes priority.
 
 ### `providers`
 
