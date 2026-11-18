@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { FooterConfig } from "../config/config.ts";
 import { bundledEndpoints } from "../config/defaults.ts";
 import { readRecord, type Snapshot } from "../usage.ts";
 import {
@@ -93,20 +94,20 @@ const providers: BuiltinProvider[] = [
 /**
  * Selects a built-in adapter or a configured custom quota provider.
  * @param id Active Pi provider ID, if any.
- * @param overrides Validated endpoint URLs keyed by provider ID.
+ * @param settings Provider settings keyed by provider ID.
  * @returns An adapter with exact overrides preferred over family overrides and bundled defaults, or undefined when unsupported.
  */
 export function resolveProvider(
   id: string | undefined,
-  overrides: ReadonlyMap<string, readonly string[]>,
+  settings: FooterConfig["providers"],
 ): UsageProvider | undefined {
   if (!id) {
     return undefined;
   }
-  const exact = overrides.get(id);
+  const exact = settings.get(id)?.endpoints;
   const builtin = providers.find((provider) => provider.matches(id));
   if (builtin) {
-    const urls = exact ?? overrides.get(builtin.id) ?? bundledEndpoints[builtin.id];
+    const urls = exact ?? settings.get(builtin.id)?.endpoints ?? bundledEndpoints[builtin.id];
     return { ...builtin, cacheKey: exact ? id : builtin.id, urls };
   }
   if (exact) {

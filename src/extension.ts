@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { type FooterConfig, loadConfig } from "./config/config.ts";
+import { type FooterConfig, loadConfig, resolveDisplay } from "./config/config.ts";
 import { formatQuota, formatQuotaSummary, renderFooter } from "./footer.ts";
 import { fetchUsage, resolveProvider } from "./providers/providers.ts";
 import type { Snapshot } from "./usage.ts";
@@ -19,7 +19,7 @@ export function registerExtension(pi: ExtensionAPI): void {
   const pending = new Map<string, Promise<void>>();
 
   async function _refresh(ctx: ExtensionContext, force = false): Promise<void> {
-    const provider = resolveProvider(ctx.model?.provider, config.endpoints);
+    const provider = resolveProvider(ctx.model?.provider, config.providers);
     if (!provider) {
       return;
     }
@@ -51,17 +51,12 @@ export function registerExtension(pi: ExtensionAPI): void {
         dispose: footerData.onBranchChange(requestRender),
         invalidate() {},
         render(width) {
-          const provider = resolveProvider(ctx.model?.provider, config.endpoints);
-          const quota = provider
-            ? formatQuota(
-                snapshots.get(provider.cacheKey),
-                config.windowOverrides.get(provider.cacheKey) ??
-                  config.windowOverrides.get(provider.id) ??
-                  config.windows,
-                config.format,
-                theme,
-              )
-            : undefined;
+          const id = ctx.model?.provider;
+          const provider = resolveProvider(id, config.providers);
+          const quota =
+            provider && id
+              ? formatQuota(snapshots.get(provider.cacheKey), resolveDisplay(config, id, provider.id), theme)
+              : undefined;
           return renderFooter(ctx, footerData, theme, width, pi.getThinkingLevel(), quota);
         },
       };
@@ -91,7 +86,7 @@ export function registerExtension(pi: ExtensionAPI): void {
     description: "Refresh and show subscription usage for the active provider",
     handler: async (_args, ctx) => {
       await _refresh(ctx, true);
-      const provider = resolveProvider(ctx.model?.provider, config.endpoints);
+      const provider = resolveProvider(ctx.model?.provider, config.providers);
       const snapshot = provider && snapshots.get(provider.cacheKey);
       if (!provider || !snapshot) {
         ctx.ui.notify("Usage is unavailable for the active provider.", "warning");

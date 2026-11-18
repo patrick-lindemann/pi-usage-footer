@@ -1,13 +1,50 @@
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { readRecord, type WindowKind, windowKinds } from "../usage.ts";
+import { readNumber, readRecord, type WindowKind, windowKinds } from "../usage.ts";
 
-export interface FooterConfig {
-  windows: WindowKind[];
-  windowOverrides: ReadonlyMap<string, WindowKind[]>;
+const defaultDisplay = {
+  windows: ["fiveHour"],
+  format: "{percent}%/{label} ↺{reset}",
+  quotaColors: {
+    normal: "dim",
+    warning: { at: 80, color: "warning" },
+    critical: { at: 90, color: "error" },
+  },
+} satisfies QuotaDisplay;
+
+export interface FooterConfig extends QuotaDisplay {
+  providers: ReadonlyMap<string, ProviderSettings>;
+}
+
+export interface QuotaDisplay {
+  windows: readonly WindowKind[];
   format: string;
-  endpoints: ReadonlyMap<string, readonly string[]>;
+  quotaColors: false | QuotaColors;
+}
+
+interface QuotaColors {
+  normal: string;
+  warning: ThresholdColor;
+  critical: ThresholdColor;
+}
+
+interface ThresholdColor {
+  at: number;
+  color: string;
+}
+
+type ColorOverrides = Partial<Pick<QuotaColors, "normal">> & {
+  warning?: Partial<ThresholdColor>;
+  critical?: Partial<ThresholdColor>;
+};
+
+interface DisplayOverrides extends Partial<Omit<QuotaDisplay, "quotaColors">> {
+  quotaColors?: false | ColorOverrides;
+}
+
+interface ProviderSettings extends DisplayOverrides {
+  endpoints?: readonly string[];
 }
 
 /**
@@ -24,6 +61,18 @@ export async function loadConfig(
   } catch {
     return _parseConfig(undefined);
   }
+}
+
+/**
+ * Resolves display settings by applying family overrides before exact provider overrides.
+ * @param config Loaded footer configuration.
+ * @param id The exact Pi provider ID.
+ * @param family The built-in provider family, if it differs from the exact ID.
+ * @returns The windows, template and colors to use for this provider.
+ */
+export function resolveDisplay(config: FooterConfig, id: string, family: string): QuotaDisplay {
+  const familyDisplay = _mergeDisplay(config, config.providers.get(family));
+  return id === family ? familyDisplay : _mergeDisplay(familyDisplay, config.providers.get(id));
 }
 
 function _readWindows(value: unknown): WindowKind[] | undefined {
@@ -44,26 +93,65 @@ function _readEndpoint(value: unknown): string | undefined {
   return undefined;
 }
 
+function _readText(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function _readThreshold(value: unknown): Partial<ThresholdColor> {
+  const source = readRecord(value);
+  const at = readNumber(source?.at);
+  return { at: at !== undefined && at >= 0 && at <= 100 ? at : undefined, color: _readText(source?.color)?.trim() };
+}
+
+function _readDisplay(source: Record<string, unknown> | undefined): DisplayOverrides {
+  const colors = readRecord(source?.quotaColors);
+  return {
+    windows: _readWindows(source?.windows),
+    format: _readText(source?.format),
+    quotaColors:
+      source?.quotaColors === false
+        ? false
+        : colors && {
+            normal: _readText(colors.normal)?.trim(),
+            warning: _readThreshold(colors.warning),
+            critical: _readThreshold(colors.critical),
+          },
+  };
+}
+
+function _mergeDisplay(base: QuotaDisplay, override: DisplayOverrides | undefined): QuotaDisplay {
+  const colors = override?.quotaColors;
+  let quotaColors = base.quotaColors;
+  if (colors === false) {
+    quotaColors = false;
+  } else if (colors) {
+    const fallback = base.quotaColors || defaultDisplay.quotaColors;
+    quotaColors = {
+      normal: colors.normal ?? fallback.normal,
+      warning: {
+        at: colors.warning?.at ?? fallback.warning.at,
+        color: colors.warning?.color ?? fallback.warning.color,
+      },
+      critical: {
+        at: colors.critical?.at ?? fallback.critical.at,
+        color: colors.critical?.color ?? fallback.critical.color,
+      },
+    };
+  }
+  return { windows: override?.windows ?? base.windows, format: override?.format ?? base.format, quotaColors };
+}
+
 function _parseConfig(value: unknown): FooterConfig {
   const source = readRecord(value);
-  const windowOverrides = new Map<string, WindowKind[]>();
-  for (const [id, kinds] of Object.entries(readRecord(source?.windowOverrides) ?? {})) {
-    const windows = _readWindows(kinds);
-    if (windows) {
-      windowOverrides.set(id, windows);
+  const providers = new Map<string, ProviderSettings>();
+  for (const [id, value] of Object.entries(readRecord(source?.providers) ?? {})) {
+    const provider = readRecord(value);
+    if (!provider) {
+      continue;
     }
+    const raw = provider.endpoints;
+    const urls = (Array.isArray(raw) ? raw : [raw]).map(_readEndpoint).filter((url) => url !== undefined);
+    providers.set(id, { ..._readDisplay(provider), endpoints: urls.length ? urls : undefined });
   }
-  const endpoints = new Map<string, readonly string[]>();
-  for (const [id, value] of Object.entries(readRecord(source?.endpoints) ?? {})) {
-    const urls = (Array.isArray(value) ? value : [value]).map(_readEndpoint).filter((url) => url !== undefined);
-    if (urls.length) {
-      endpoints.set(id, urls);
-    }
-  }
-  return {
-    windows: _readWindows(source?.windows) ?? ["fiveHour"],
-    windowOverrides,
-    format: typeof source?.format === "string" && source.format ? source.format : "{percent}%/{label} ↺{reset}",
-    endpoints,
-  };
+  return { ..._mergeDisplay(defaultDisplay, _readDisplay(source)), providers };
 }

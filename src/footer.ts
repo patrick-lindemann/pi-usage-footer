@@ -1,6 +1,8 @@
 import { homedir } from "node:os";
-import type { ExtensionContext, ReadonlyFooterDataProvider, Theme } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import type { ExtensionContext, ReadonlyFooterDataProvider, Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
+import { parseColor, rgbColor, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import namedColors from "color-name";
+import type { QuotaDisplay } from "./config/config.ts";
 import { type Snapshot, type UsageWindow, type WindowKind, windowKinds } from "./usage.ts";
 
 const labels: Record<WindowKind, string> = { fiveHour: "5h", weekly: "W", monthly: "M" };
@@ -11,24 +13,34 @@ type FooterTheme = Pick<Theme, "fg">;
 /**
  * Formats the selected quota windows for display beside the model.
  * @param snapshot The last successful provider response, if available.
- * @param kinds Windows to show, in display order.
- * @param template Text and placeholders to render for each window.
+ * @param display Resolved window order, template, and color rules.
  * @param theme Pi's color formatter.
  * @returns Quota text with warning colors, or undefined when no selected window is available.
  */
 export function formatQuota(
   snapshot: Snapshot | undefined,
-  kinds: readonly WindowKind[],
-  template: string,
-  theme: FooterTheme,
+  display: QuotaDisplay,
+  theme: Pick<Theme, "fg" | "style">,
 ): string | undefined {
   const parts: string[] = [];
-  for (const kind of kinds) {
+  for (const kind of display.windows) {
     const window = snapshot?.[kind];
-    if (window) {
-      const used = Math.round(window.usedPercent);
-      const color = used >= 90 ? "error" : used >= 80 ? "warning" : "dim";
-      parts.push(theme.fg(color, _formatWindow(template, kind, window)));
+    if (!window) {
+      continue;
+    }
+    const text = _formatWindow(display.format, kind, window);
+    const colors = display.quotaColors;
+    if (!colors) {
+      parts.push(text);
+      continue;
+    }
+    const used = Math.round(window.usedPercent);
+    if (used >= colors.critical.at) {
+      parts.push(_applyColor(theme, text, colors.critical.color, "error"));
+    } else if (used >= colors.warning.at) {
+      parts.push(_applyColor(theme, text, colors.warning.color, "warning"));
+    } else {
+      parts.push(_applyColor(theme, text, colors.normal, "dim"));
     }
   }
   return parts.length ? parts.join(theme.fg("dim", " • ")) : undefined;
@@ -98,6 +110,21 @@ export function renderFooter(
     lines.push(truncateToWidth(statuses, width, "..."));
   }
   return lines;
+}
+
+function _applyColor(theme: Pick<Theme, "fg" | "style">, text: string, color: string, fallback: ThemeColor): string {
+  if (/^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(color)) {
+    return theme.style(text, { fg: parseColor(color) });
+  }
+  const name = color.toLowerCase() as keyof typeof namedColors;
+  if (Object.hasOwn(namedColors, name)) {
+    return theme.style(text, { fg: rgbColor(...namedColors[name]) });
+  }
+  try {
+    return theme.fg(color as ThemeColor, text);
+  } catch {
+    return theme.fg(fallback, text);
+  }
 }
 
 function _formatSessionStats(ctx: FooterContext, theme: FooterTheme): string {

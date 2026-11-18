@@ -12,8 +12,8 @@ test("prefers exact endpoint overrides to family overrides and bundled URLs", ()
   const exact = ["https://quota.example/codex-account"];
   const family = ["https://quota.example/codex"];
   const overrides = new Map([
-    ["openai-codex-2", exact],
-    ["openai-codex", family],
+    ["openai-codex-2", { endpoints: exact }],
+    ["openai-codex", { endpoints: family }],
   ]);
   assert.equal(resolveProvider("openai-codex-2", overrides).urls, exact);
   assert.equal(resolveProvider("openai-codex-2", overrides).cacheKey, "openai-codex-2");
@@ -29,7 +29,7 @@ test("fetches normalized windows for a configured provider and tries fallback UR
       ? new Response(null, { status: 503 })
       : Response.json({ fiveHour: { usedPercent: 0, resetAt: 1_900_000_000_000 }, weekly: { usedPercent: 101 } }),
   );
-  const provider = resolveProvider("custom", new Map([["custom", urls]]));
+  const provider = resolveProvider("custom", new Map([["custom", { endpoints: urls }]]));
   const snapshot = await fetchUsage(provider, context);
   assert.deepEqual(snapshot.fiveHour, { usedPercent: 0, resetAt: 1_900_000_000_000 });
   assert.equal(snapshot.weekly, undefined);

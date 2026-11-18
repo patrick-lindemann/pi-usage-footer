@@ -9,8 +9,7 @@ windows of coding-plan subscriptions, with reset countdowns and warning colors.
 | Provider | pi provider ids | Windows | Source |
 | --- | --- | --- | --- |
 | OpenAI Codex | `openai-codex`, `openai-codex-<n>` | 5-hour, weekly | `chatgpt.com/backend-api/wham/usage` |
-| Claude Code | `claude-code` | 5-hour, weekly | `api.anthropic.com/api/oauth/usage` |
-| Anthropic (pi OAuth) | `anthropic` | 5-hour, weekly | `api.anthropic.com/api/oauth/usage` |
+| Claude Code / Anthropic | `claude-code`, `anthropic` | 5-hour, weekly | `api.anthropic.com/api/oauth/usage` |
 | OpenCode Go | `opencode`, `opencode-go` | rolling 5-hour, weekly, monthly | `opencode.ai/zen/go/v1/usage` |
 | GLM Coding Plan | `zai*`, `glm*` | 5-hour, weekly, monthly (MCP) | `api.z.ai` / `open.bigmodel.cn` `api/monitor/usage/quota/limit` |
 | Kimi Code | `kimi*` | 5-hour, weekly, monthly | `api.kimi.com/coding/v1/usages` |
@@ -54,13 +53,16 @@ Create `~/.pi/agent/usage-footer.json` to override the defaults:
 ```json
 {
   "windows": ["fiveHour"],
-  "windowOverrides": {
-    "opencode": ["fiveHour", "weekly", "monthly"],
-    "copilot": ["monthly"]
-  },
   "format": "{percent}%/{label} ↺{reset}",
-  "endpoints": {
-    "my-provider": "https://quota.example.com/usage"
+  "quotaColors": {
+    "normal": "lightgray",
+    "warning": { "at": 80, "color": "warning" },
+    "critical": { "at": 90, "color": "#ff5555" }
+  },
+  "providers": {
+    "opencode": { "windows": ["fiveHour", "weekly", "monthly"] },
+    "copilot": { "windows": ["monthly"], "format": "{remaining}% left", "quotaColors": false },
+    "my-provider": { "endpoints": "https://quota.example.com/usage" }
   }
 }
 ```
@@ -71,12 +73,6 @@ Which windows to display, in this order: `"fiveHour"`, `"weekly"`, `"monthly"`.
 Each provider shows whichever of the selected windows it actually reports, so
 `"monthly"` is silently skipped on providers without a monthly quota. An empty
 list hides the usage. Default: `["fiveHour"]`.
-
-### `windowOverrides`
-
-Per-provider window lists used instead of the global `windows`. Use the IDs in
-[`src/config/defaults.ts`](src/config/defaults.ts), an ID with its own endpoint
-override, or a custom provider ID. Default: none.
 
 ### `format`
 
@@ -92,14 +88,25 @@ A template rendered once per displayed window:
 When the reset time is unknown, `{reset}` together with any decoration directly
 before it (like `↺`) is removed. Default: `"{percent}%/{label} ↺{reset}"`.
 
-Colors are automatic: dim below 80% used, warning from 80%, error from 90%.
+### `quotaColors`
 
-### `endpoints`
+By default, quota text uses `dim` below 80% used, `warning` from 80%, and
+`error` from 90%. Set `quotaColors` to `false` for plain quota text. Use Pi theme
+names, CSS color names such as `lightgray`, or hex values such as `#ff5555`.
+Thresholds use the rounded used percentage, and `critical` takes priority.
 
-Set a provider ID to one HTTPS URL or an ordered list of fallback URLs. Exact
-IDs take precedence over family IDs. Built-in providers keep their existing
-response format and authentication. Missing or invalid URL entries use the
-[bundled defaults](src/config/defaults.ts), when available.
+### `providers`
+
+Each provider can override `windows`, `format`, and `quotaColors`. Fields inherit
+independently: exact Pi provider ID, then family ID, then root settings, then
+bundled defaults. A color object re-enables colors after `false`, starting from
+the bundled palette. Use the [bundled endpoint IDs](src/config/defaults.ts) for
+family overrides.
+
+Set `endpoints` inside a provider to one HTTPS URL or an ordered list of fallback
+URLs. If neither the exact nor the family override has a valid URL, built-in
+providers use their bundled endpoints. Built-in providers keep their response
+format and authentication.
 
 To add a provider, use its exact Pi provider ID and point it at an endpoint that
 returns quota windows in this format:
