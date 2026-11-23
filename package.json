@@ -1,18 +1,44 @@
 {
-  "name": "pi-usage-footer",
-  "version": "0.1.0",
+  "name": "@patrick-lindemann/pi-usage-footer",
+  "version": "0.2.0",
   "description": "Subscription usage (5-hour, weekly, monthly windows) in the pi footer for Codex, Claude Code, OpenCode, GLM Coding Plan, Kimi Code and GitHub Copilot",
   "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/patrick-lindemann/pi-usage-footer.git"
+  },
+  "files": [
+    "src",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "check": "tsc && biome check",
+    "format": "biome check --write",
+    "test": "node --test tests/*.test.mjs"
+  },
   "keywords": [
     "pi-package"
   ],
   "pi": {
     "extensions": [
-      "./extensions/usage-footer.ts"
+      "./src/index.ts"
     ]
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-tui": "*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.8",
+    "@types/color-name": "^2.0.0",
+    "@types/node": "26.6.6",
+    "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "color-name": "^2.1.1"
   }
 }

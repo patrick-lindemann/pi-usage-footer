@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-23
+
+### Added
+
+- Footer status text from other extensions appears between the model name and subscription usage when space permits.
+- Override quota windows, templates, colors, and endpoints under `providers`, or add a provider through a normalized JSON endpoint.
+- Customize quota colors and thresholds, or turn quota coloring off.
+- Set the quota polling interval or disable periodic polling.
+- Choose whether other extensions’ status text appears inline or on a separate row.
+- Publish releases to npm as `@patrick-lindemann/pi-usage-footer`.
+
+### Removed
+
+- The `windowOverrides` and root-level `endpoints` maps. Put these settings under `providers` instead.
+- Unused `footerPosition` and `standardFooter` options, and migration of `chatgpt-limit.json`, `quotaWindow` and `displayMode`.
+
 ## [0.1.0] - 2026-11-18
 
 ### Added
@@ -25,5 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrates the legacy `chatgpt-limit.json` configuration and the old
   `quotaWindow`/`displayMode` keys automatically.
 
-[Unreleased]: https://github.com/patrick-lindemann/pi-usage-footer/compare/v0.1.0...develop
+[Unreleased]: https://github.com/patrick-lindemann/pi-usage-footer/compare/v0.2.0...develop
+[0.2.0]: https://github.com/patrick-lindemann/pi-usage-footer/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/patrick-lindemann/pi-usage-footer/releases/tag/v0.1.0
