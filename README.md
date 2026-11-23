@@ -40,7 +40,7 @@ pi install git:github.com/patrick-lindemann/pi-usage-footer@v0.1.0
 ## Usage
 
 Usage appears after the model and thinking level. Status text from extensions
-such as `pi-token-speed` appears after usage, or on a separate line if it does
+such as `pi-token-speed` appears before usage, or on a separate line if it does
 not fit. Extensions that replace the entire footer cannot share this layout.
 
 The `/usage-footer` command forces a refresh and shows every window the active

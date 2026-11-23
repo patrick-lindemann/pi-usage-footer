@@ -66,7 +66,7 @@ export function formatQuotaSummary(name: string, snapshot: Snapshot): string {
 }
 
 /**
- * Renders the model, quota, and shared extension statuses at the current terminal width.
+ * Renders the model, shared extension statuses, and quota at the current terminal width.
  * @param ctx Active model and session data from Pi.
  * @param footerData Git branch and status strings from Pi.
  * @param theme Pi's color formatter.
@@ -91,13 +91,14 @@ export function renderFooter(
     ? `${modelName} • ${thinkingLevel === "off" ? "thinking off" : thinkingLevel}`
     : modelName;
   const separator = theme.fg("dim", " • ");
-  const modelAndQuota = [theme.fg("dim", model), quota].filter(Boolean).join(separator);
+  const dimModel = theme.fg("dim", model);
+  const modelAndQuota = [dimModel, quota].filter(Boolean).join(separator);
   const statuses = [...footerData.getExtensionStatuses()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([, text]) => text.replace(/\s+/g, " ").trim())
     .filter(Boolean)
     .join(separator);
-  const rightWithStatuses = statuses ? `${modelAndQuota}${separator}${statuses}` : modelAndQuota;
+  const rightWithStatuses = [dimModel, statuses, quota].filter(Boolean).join(separator);
   const showInline =
     statusPlacement === "inline" ||
     (statusPlacement === "auto" && visibleWidth(stats) + 2 + visibleWidth(rightWithStatuses) <= width);

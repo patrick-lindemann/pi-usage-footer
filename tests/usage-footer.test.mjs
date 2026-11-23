@@ -68,7 +68,7 @@ test("renders live status entries without changing quota placement or migrating 
   statuses.set("clock", "Ready\nnow");
   const wide = footer.render(120);
   assert.equal(wide.length, 2);
-  assert.ok(wide[1].endsWith(`example-model • high • 42%/5h • Ready now • ${speed}`));
+  assert.ok(wide[1].endsWith(`example-model • high • Ready now • ${speed} • 42%/5h`));
 
   const narrow = footer.render(44);
   assert.equal(narrow.length, 3);
@@ -77,7 +77,7 @@ test("renders live status entries without changing quota placement or migrating 
   assert.ok(narrow.every((line) => visibleWidth(line) <= 44));
 
   statuses.set("token-speed", "61.0 tok/s");
-  assert.match(footer.render(120)[1], /61\.0 tok\/s$/);
+  assert.match(footer.render(120)[1], /61\.0 tok\/s • 42%\/5h$/);
 
   statuses.clear();
   assert.deepEqual(footer.render(120), baseline);
