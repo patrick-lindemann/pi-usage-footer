@@ -1,6 +1,6 @@
 {
   "name": "@patrick-lindemann/pi-usage-footer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Subscription usage (5-hour, weekly, monthly windows) in the pi footer for Codex, Claude Code, OpenCode, GLM Coding Plan, Kimi Code and GitHub Copilot",
   "license": "MIT",
   "type": "module",
